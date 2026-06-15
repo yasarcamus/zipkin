@@ -1,0 +1,34 @@
+name: TouristNetTR Turkiye 100
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - triggers/turkiye100/**
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run machine
+        run: python scripts/touristnettr_lead_machine.py --mode target100 --target-count 100
+      - name: Commit outputs
+        shell: bash
+        run: |
+          git config user.name "touristnettr-lead-bot"
+          git config user.email "touristnettr-lead-bot@users.noreply.github.com"
+          git add leads reports triggers
+          git commit -m "Run TouristNetTR Turkiye 100" || echo "No changes"
+          git push
