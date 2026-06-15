@@ -1,0 +1,72 @@
+name: TouristNetTR Lead Machine
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Run mode
+        required: true
+        default: antalya10
+      target_count:
+        description: Lead target count
+        required: false
+        default: "10"
+  push:
+    paths:
+      - triggers/antalya10/**
+      - triggers/target100/**
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Resolve mode
+        id: vars
+        shell: bash
+        run: |
+          MODE="antalya10"
+          TARGET="10"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MODE="${{ github.event.inputs.mode }}"
+            TARGET="${{ github.event.inputs.target_count }}"
+          else
+            CHANGED="$(git diff --name-only HEAD~1 HEAD || true)"
+            if echo "$CHANGED" | grep -q '^triggers/target100/'; then
+              MODE="target100"
+              TARGET="100"
+            fi
+          fi
+          if [ -z "$TARGET" ]; then
+            if [ "$MODE" = "target100" ]; then TARGET="100"; else TARGET="10"; fi
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run machine
+        env:
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+        run: python scripts/touristnettr_lead_machine.py --mode "${{ steps.vars.outputs.mode }}" --target-count "${{ steps.vars.outputs.target }}"
+
+      - name: Commit outputs
+        shell: bash
+        run: |
+          git config user.name "touristnettr-lead-bot"
+          git config user.email "touristnettr-lead-bot@users.noreply.github.com"
+          git add leads reports triggers
+          git commit -m "Run TouristNetTR lead machine" || echo "No changes"
+          git push
