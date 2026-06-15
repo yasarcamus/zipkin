@@ -6,7 +6,11 @@ on:
       mode:
         description: Run mode
         required: true
+        type: choice
         default: antalya10
+        options:
+          - antalya10
+          - target100
       target_count:
         description: Lead target count
         required: false
@@ -42,13 +46,22 @@ jobs:
             if echo "$CHANGED" | grep -q '^triggers/target100/'; then
               MODE="target100"
               TARGET="100"
+            elif echo "$CHANGED" | grep -q '^triggers/antalya10/'; then
+              MODE="antalya10"
+              TARGET="10"
             fi
           fi
-          if [ -z "$TARGET" ]; then
+          if [ "$MODE" != "antalya10" ] && [ "$MODE" != "target100" ]; then
+            echo "Invalid mode '$MODE'; falling back to antalya10"
+            MODE="antalya10"
+          fi
+          if ! [[ "$TARGET" =~ ^[0-9]+$ ]]; then
+            echo "Invalid target_count '$TARGET'; falling back by mode"
             if [ "$MODE" = "target100" ]; then TARGET="100"; else TARGET="10"; fi
           fi
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+          echo "Resolved mode=$MODE target=$TARGET"
 
       - uses: actions/setup-python@v5
         with:
@@ -57,16 +70,20 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run machine
+      - name: Run machine safely
         env:
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
-        run: python scripts/touristnettr_lead_machine.py --mode "${{ steps.vars.outputs.mode }}" --target-count "${{ steps.vars.outputs.target }}"
+        run: python scripts/safe_touristnettr_lead_machine.py --mode "${{ steps.vars.outputs.mode }}" --target-count "${{ steps.vars.outputs.target }}"
 
       - name: Commit outputs
         shell: bash
         run: |
           git config user.name "touristnettr-lead-bot"
           git config user.email "touristnettr-lead-bot@users.noreply.github.com"
-          git add leads reports triggers
-          git commit -m "Run TouristNetTR lead machine" || echo "No changes"
-          git push
+          git add leads reports triggers || true
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit"
+          else
+            git commit -m "Run TouristNetTR lead machine"
+            git push
+          fi
