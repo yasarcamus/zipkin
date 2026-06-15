@@ -1,74 +1,50 @@
-# TouristNetTR — Antalya Hotel-Only Night Pipeline
+# TouristNetTR — Antalya Hotel Mail List
 
 Run date: 2026-06-15
 Repository: yasarcamus/zipkin
-Scope: Antalya province hotels only.
 
-## Hard Scope
+## Goal
 
-Include only hotel/accommodation businesses in Antalya province:
+Find Antalya hotels that have a visible hotel email address.
+
+## Include only
+
+- Antalya province hotels
+- 2-star hotels
+- 3-star hotels
+- 4-star hotels
 - Boutique hotels
 - Apart hotels
-- City hotels
-- Beach hotels
-- Resort hotels if reachable through a clear contact path
-- Thermal/spa hotels if they serve foreign tourists
-- Professional accommodation businesses with visible hotel operations
 
-Antalya province includes Antalya city, Kaleiçi/Muratpaşa, Konyaaltı, Lara/Kundu, Belek/Serik, Kemer, Side/Manavgat, Alanya, Kaş, Kalkan, Finike, Demre, Adrasan, Çıralı/Olympos, Kumluca and similar Antalya districts/tourism zones.
+## Exclude
 
-## Hard Exclusions
+- 5-star resorts unless clearly boutique/apart style
+- Villas
+- Airbnb / property management
+- Incoming agencies / DMCs / tour operators
+- Real estate offices
+- Restaurants / cafes / shops
+- Clinics
+- Hostels / dorms / campsites
+- OTAs and directories such as Booking, Expedia, Agoda, Hotels.com, Otelz, Neredekal
 
-Reject:
-- Non-Antalya businesses
-- Incoming agencies, DMCs, tour operators
-- Airbnb/villa/property management companies
-- Generic real estate offices
-- Standalone villas/daily rentals without hotel operation
-- Small phone/communication shops
-- Western Union/döviz-style shops
-- Restaurants, cafes, markets
-- Clinics/health tourism businesses
-- Blogs, directories, OTAs, affiliate pages
-- Records without source evidence
+## Rules
 
-## Quality Rules
+- If the hotel has an email, add it.
+- If there is no email, skip it.
+- Do not require decision maker data.
+- Do not require phone.
+- Do not require LinkedIn.
+- Do not score leads.
+- Do not write integration point.
+- Do not force exactly 10 records.
+- Do not write a failure report if the count is low.
+- Do not invent or pattern-generate emails.
 
-- No guessed or inferred emails.
-- Mark a lead as `mail-ready` only if the email is found on an official source or a highly credible source and is not obviously mismatched with the hotel/domain.
-- If email is uncertain, mark first_contact_channel as `phone/form/Instagram-first`.
-- Source links are mandatory for approved records.
-- Duplicate and near-duplicate hotel names must be removed.
-- Chain/corporate hotels are lower priority unless a local direct contact path exists.
-- Prefer fast-action independent hotels, boutique hotels, apart hotels, city hotels and professional tourism-facing hotels.
+## CSV columns
 
-## Output Paths
+hotel_name,district,hotel_type,stars,website,email,email_source_url,phone,instagram,source_urls,note
 
-Producer writes:
-- `leads/raw/2026-06-15-antalya-hotels-raw.csv`
+## Output
 
-QC writes:
-- `leads/approved/2026-06-15-antalya-hotels-approved.csv`
-- `leads/quarantine/2026-06-15-antalya-hotels-quarantine.csv`
-- `leads/rejected/2026-06-15-antalya-hotels-rejected.csv`
-- `leads/qc/2026-06-15-antalya-hotels-qc-report.md`
-
-Morning brief writes:
-- `reports/2026-06-15-antalya-hotels-morning-brief.md`
-
-## CSV Columns
-
-hotel_name,district_city,hotel_type,website,instagram,phone_whatsapp,email,email_status,source_links,contact_source,first_contact_channel,foreign_tourist_signal,integration_point,fit_score,status,qc_note
-
-## Status Values
-
-- A_APPROVED: directly usable
-- B_CONTACT_FIRST: good lead, but do not bulk email; use phone/form/Instagram first
-- C_QUARANTINE: useful but needs manual verification
-- D_REJECT: not usable
-
-## Target
-
-Producer should find 60 raw candidates.
-QC should approve only strong records; do not fill quota with weak data.
-Morning brief should give counts, top 10 leads and today's action plan.
+`leads/approved/2026-06-15-antalya-mail-hotels.csv`
