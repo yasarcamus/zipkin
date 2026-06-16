@@ -1,1 +1,2 @@
-setup
+triggered_at_istanbul=2026-06-16 06:29:36 +0300
+note=automation trigger for TouristNetTR Türkiye 100 target100 run
